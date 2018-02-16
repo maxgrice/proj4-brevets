@@ -4,6 +4,10 @@ Replacement for RUSA ACP brevet time calculator
 
 """
 
+# docker build -t brevets .
+# docker run -p 5000:5000 brevets
+# http://127.0.0.1:5000
+
 import flask
 from flask import request
 import arrow  # Replacement for datetime, based on moment.js
@@ -28,10 +32,10 @@ app.secret_key = CONFIG.SECRET_KEY
 @app.route("/index")
 def index():
     app.logger.debug("Main page entry")
-    return flask.render_template('calc.html')
+    return flask.render_template('calc.html') # renders main page
 
 
-@app.errorhandler(404)
+@app.errorhandler(404) # error handler
 def page_not_found(error):
     app.logger.debug("Page not found")
     flask.session['linkback'] = flask.url_for("index")
@@ -44,6 +48,7 @@ def page_not_found(error):
 #   These return JSON, rather than rendering pages.
 #
 ###############
+
 @app.route("/_calc_times")
 def _calc_times():
     """
@@ -52,15 +57,31 @@ def _calc_times():
     Expects one URL-encoded argument, the number of miles.
     """
     app.logger.debug("Got a JSON request")
+    
+    # gets all arguments needed to calculating opening and closing times
     km = request.args.get('km', 999, type=float)
+    brevet_dist = request.args.get('brev_dis', 999, type=int)
+    start_time = request.args.get('start_t', 999, type=str)
+    start_date = request.args.get('start_d', 999, type=str)
+    
+    # debug statements
+    app.logger.debug("start time={}".format(start_time))
+    app.logger.debug("start date={}".format(start_date))
     app.logger.debug("km={}".format(km))
     app.logger.debug("request.args: {}".format(request.args))
-    # FIXME: These probably aren't the right open and close times
-    # and brevets may be longer than 200km
-    open_time = acp_times.open_time(km, 200, arrow.now().isoformat)
-    close_time = acp_times.close_time(km, 200, arrow.now().isoformat)
-    result = {"open": open_time, "close": close_time}
-    return flask.jsonify(result=result)
+    
+    # reformats times to correct iso string format
+    time_str = "{}T{}".format(start_date, start_time)
+    time = arrow.get(time_str)
+    time = time.isoformat() 
+    
+    # calculates new opening and closing times for control
+    opening = acp_times.open_time(km, brevet_dist, time)
+    closing = acp_times.close_time(km, brevet_dist, time)
+
+    result = {"open": opening, "close": closing}
+
+    return flask.jsonify(result=result) # sends back result!
 
 
 #############

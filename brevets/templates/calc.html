@@ -127,14 +127,25 @@
     var open_time_field = control.find("input[name='open']");
     var close_time_field = control.find("input[name='close']");
     
-    $.getJSON(TIME_CALC_URL, { km: km }, 
+    var start_date = $("#begin_date").val(); // obtains starting date
+    console.log("BEGIN DATE: " +  start_date); 
+    var start_time = $("#begin_time").val(); // obtains starting time
+    console.log("BEGIN TIME: " +  start_time); 
+    var brevet_dist = $("#brevet_dist_km").val(); // obtains total distance
+    console.log("TOTAL DIST: " +  brevet_dist);
+    // TIME_CALC_URL
+    
+    $.getJSON("/_calc_times", { km: km, brev_dis: brevet_dist, start_t: start_time, start_d: start_date, }, 
       // response handler
       function(data) {
-         var times = data.result;
-         console.log("Got a response: " +  times);
+         var times = data.result; // contains opening and closing times
+
+         console.log("Got a response: " +  times); 
          console.log("Response.open = " + times.open);
-         open_time_field.val( moment(times.open).format("ddd M/D H:mm"));
-         close_time_field.val( moment(times.close).format("ddd M/D H:mm"));
+         console.log("Response.close = " + times.close);
+
+         open_time_field.val( moment(times.open).utcOffset("8").format("ddd M/D H:mm"));
+         close_time_field.val( moment(times.close).utcOffset("8").format("ddd M/D H:mm"));
        } // end of handler function
      );// End of getJSON
     }
